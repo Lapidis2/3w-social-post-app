@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './App.css'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Login from './pages/authPage/login'
-import Signup from './pages/authPage/signup';
 import SocialPage from './pages/socialPage';
+import Signup from './pages/authPage/signup';
 const queryClient = new QueryClient();
 function App() {
  
