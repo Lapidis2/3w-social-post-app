@@ -26,12 +26,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPost }) => {
           >
             All Posts
           </button>
-          <button
-            className={`post-type-tab ${postType === 'promotion' ? 'active' : ''}`}
-            onClick={() => setPostType('promotion')}
-          >
-            Promotions
-          </button>
+        
         </div>
       </div>
 
@@ -51,13 +46,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPost }) => {
           <button className="tool-btn" title="Add Emoji">
             <i className="bi bi-emoji-smile"></i>
           </button>
-          <button className="tool-btn" title="Format Text">
-            <i className="bi bi-text-left"></i>
-          </button>
-          <button className="btn btn-link text-primary fw-semibold text-decoration-none p-0 d-flex align-items-center gap-1">
-            <i className="bi bi-megaphone"></i>
-            Promote
-          </button>
+          
         </div>
 
         <button

@@ -3,7 +3,7 @@ import { currentUser } from '../../data/mockData';
 
 const SocialHeader: React.FC = () => {
   return (
-    <header className="social-header bg-white p-3">
+    <header className="social-header bg-white p-3 fixed-top">
       <div className="d-flex justify-content-between align-items-center">
         <h1 className="h4 fw-bold mb-0 text-dark">Social</h1>
         <div className="d-flex align-items-center gap-2">

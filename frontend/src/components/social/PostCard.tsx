@@ -68,39 +68,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         {renderContent()}
       </div>
 
-      {/* Achievement */}
-      {post.hasAchievement && post.achievement && (
-        <>
-          <div className="achievement-card mb-3">
-            <h3 className="h5 fw-bold mb-1">{post.achievement.title}</h3>
-            <p className="mb-0" style={{ opacity: 0.9 }}>{post.achievement.subtitle}</p>
-          </div>
 
-          <div className="text-center mb-3">
-            <img src={post.user.avatar} alt={post.user.name} className="achievement-avatar mb-2" />
-            <h5 className="fw-bold mb-0">{post.user.name}</h5>
-            <p className="text-muted small mb-0">@{post.user.username}</p>
-          </div>
-
-          <div className="text-center mt-3">
-            <h4 className="fs-6 fw-semibold d-flex align-items-center justify-content-center gap-2 mb-3">
-              <span>📊</span> MY LEADERBOARD RANKS
-            </h4>
-            <div className="d-flex justify-content-center gap-3">
-              {post.achievement.ranks.map((rank) => (
-                <div key={rank.type} className="rank-card">
-                  <div className="small fw-semibold text-uppercase" style={{ letterSpacing: 1, opacity: 0.9, fontSize: '0.7rem' }}>POINTS</div>
-                  <div className="fw-bold" style={{ fontSize: '1.8rem' }}>#{rank.rank}</div>
-                  <div className="small fw-semibold text-uppercase">{rank.type}</div>
-                  <div className="small d-flex align-items-center justify-content-center gap-1" style={{ opacity: 0.9 }}>
-                    {rank.points} pts <span>🏆</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+   
 
       {/* Post Image */}
       {post.image && (
