@@ -31,7 +31,7 @@ const Signup: React.FC = () => {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userEmail', email);
     localStorage.setItem('userName', name);
-    navigate('/');
+    navigate('/login');
   };
 
   return (

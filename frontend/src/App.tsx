@@ -6,14 +6,16 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Login from './pages/authPage/login'
 import SocialPage from './pages/socialPage';
 import Signup from './pages/authPage/signup';
+import { Toaster } from './components/ui/toaster';
 const queryClient = new QueryClient();
+
 function App() {
  
 
   return (
      <QueryClientProvider client={queryClient}>
 
-  
+    <Toaster />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SocialPage />} />

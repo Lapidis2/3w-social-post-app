@@ -9,34 +9,43 @@ import CommentDrawer from '../components/social/CommentDrawer';
 import { mockPosts, type Post, currentUser, type Comment } from '../data/mockData';
 import '../styles/index.css';
 
+const POSTS_PER_PAGE = 4;
+
 const SocialPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [activeFilter, setActiveFilter] = useState('all');
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Authentication check
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     if (!isLoggedIn) {
-      navigate('/');
+      navigate('/login');
     }
   }, [navigate]);
 
+  // ---- Search ----
   const handleSearch = (query: string) => {
+    let filtered: Post[];
     if (query.trim()) {
-      const filtered = mockPosts.filter(
+      filtered = mockPosts.filter(
         (post) =>
           post.content.toLowerCase().includes(query.toLowerCase()) ||
           post.user.name.toLowerCase().includes(query.toLowerCase()) ||
           post.hashtags.some((tag) => tag.toLowerCase().includes(query.toLowerCase()))
       );
-      setPosts(filtered);
     } else {
-      setPosts(mockPosts);
+      filtered = mockPosts;
     }
+    setPosts(filtered);
+    setCurrentPage(1); // reset page when search
   };
 
+  // ---- Create Post ----
   const handlePost = (content: string) => {
     const newPost: Post = {
       id: Date.now().toString(),
@@ -52,8 +61,10 @@ const SocialPage: React.FC = () => {
       createdAt: new Date(),
     };
     setPosts([newPost, ...posts]);
+    setCurrentPage(1); // reset page when new post
   };
 
+  // ---- Filter ----
   const handleFilterChange = (filterId: string) => {
     setActiveFilter(filterId);
     const sortedPosts = [...mockPosts];
@@ -69,10 +80,12 @@ const SocialPage: React.FC = () => {
         break;
     }
     setPosts(sortedPosts);
+    setCurrentPage(1); // reset page on filter
   };
 
+  // ---- Like / Comment / Share / Follow ----
   const handleLike = (postId: string) => {
-    setPosts(posts.map((post) =>
+    setPosts(posts.map(post =>
       post.id === postId
         ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
         : post
@@ -93,7 +106,7 @@ const SocialPage: React.FC = () => {
       likes: 0,
       createdAt: new Date(),
     };
-    setPosts(posts.map((post) =>
+    setPosts(posts.map(post =>
       post.id === selectedPostId
         ? { ...post, comments: post.comments + 1, commentsList: [newComment, ...post.commentsList] }
         : post
@@ -105,11 +118,23 @@ const SocialPage: React.FC = () => {
   };
 
   const handleFollow = (userId: string) => {
-    setPosts(posts.map((post) =>
+    setPosts(posts.map(post =>
       post.user.id === userId
         ? { ...post, user: { ...post.user, isFollowing: !post.user.isFollowing } }
         : post
     ));
+  };
+
+  // ---- Pagination ----
+  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  const paginatedPosts = posts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
   };
 
   return (
@@ -124,12 +149,12 @@ const SocialPage: React.FC = () => {
           <FilterTabs activeFilter={activeFilter} onFilterChange={handleFilterChange} />
 
           <div className="mt-3">
-            {posts.length === 0 ? (
+            {paginatedPosts.length === 0 ? (
               <div className="text-center p-4">
                 <p className="text-muted">No posts found</p>
               </div>
             ) : (
-              posts.map((post) => (
+              paginatedPosts.map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -141,14 +166,31 @@ const SocialPage: React.FC = () => {
               ))
             )}
           </div>
-        </div>
 
-        {/* Sidebar */}
-        <div className="col-lg-4 d-none d-lg-block">
-          <div className="sidebar p-3 border rounded">
-            <h5>Trending</h5>
-            {/* Add trending users, hashtags, etc */}
-          </div>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <nav className="mt-3">
+              <ul className="pagination justify-content-center">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                    Previous
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li key={i} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                    <button className="page-link" onClick={() => handlePageChange(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                  <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          )}
         </div>
       </div>
 
