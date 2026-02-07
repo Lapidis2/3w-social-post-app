@@ -23,7 +23,7 @@ const SocialPage: React.FC = () => {
  
   const fetchPosts = async () => {
     setLoading(true);
-    // simulate delay
+   
     await new Promise((res) => setTimeout(res, 800));
     setPosts(mockPosts);
     setLoading(false);
