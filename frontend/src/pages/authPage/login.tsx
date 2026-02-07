@@ -7,23 +7,43 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
 
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true); // start loading
 
-    if (email && password.length >= 6) {
-      localStorage.setItem('isLoggedIn', 'true');
+  if (!email || !password) {
+    setError('Please fill in all fields');
+    setLoading(false); // stop loading
+    return;
+  }
+
+  try {
+    const response = await fetch('https://my-brand-backend-tsc3.onrender.com/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || 'Login failed');
+    } else {
+      localStorage.setItem('token', data.token);
       localStorage.setItem('userEmail', email);
       navigate('/');
-    } else {
-      setError('Invalid credentials. Password must be at least 6 characters.');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError('Server error, please try again later.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="auth-container">
@@ -54,9 +74,20 @@ const Login: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary w-100 rounded-3 py-2 fw-semibold">
-            Login
-          </button>
+         <button
+  type="submit"
+  className="btn btn-primary w-100 rounded-3 py-2 fw-semibold"
+  disabled={loading}
+>
+  {loading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Logging in...
+    </>
+  ) : (
+    'Login'
+  )}
+</button>
         </form>
 
         <p className="text-center mt-3 text-secondary">
