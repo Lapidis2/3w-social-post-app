@@ -17,12 +17,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   if (!email || !password) {
     setError('Please fill in all fields');
-    setLoading(false); // stop loading
+    setLoading(false); 
     return;
   }
 
   try {
-    const response = await fetch('https://my-brand-backend-tsc3.onrender.com/api/login', {
+    const response = await fetch('https://threew-social-post-app.onrender.com/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
