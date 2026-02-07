@@ -20,7 +20,7 @@ const SocialPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Simulate fetching posts (or replace with real API)
+ 
   const fetchPosts = async () => {
     setLoading(true);
     // simulate delay
