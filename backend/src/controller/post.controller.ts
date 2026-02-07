@@ -37,7 +37,9 @@ export const getPosts = async (req: AuthRequest, res: Response) => {
 };
 
 export const likePost = async (req: AuthRequest, res: Response) => {
+  
   const post = await Post.findById(req.params.id);
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   if (!post) return res.status(404).json({ message: "Post not found" });
 
   if (post.likes.includes(req.user.username)) {
@@ -52,6 +54,7 @@ export const likePost = async (req: AuthRequest, res: Response) => {
 
 export const commentPost = async (req: AuthRequest, res: Response) => {
   const post = await Post.findById(req.params.id);
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   if (!post) return res.status(404).json({ message: "Post not found" });
 
   post.comments.push({
