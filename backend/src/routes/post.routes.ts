@@ -15,4 +15,4 @@ router.get("/", auth, getPosts);
 router.post("/:id/like", auth, likePost);
 router.post("/:id/comment", auth, commentPost);
 
-export default router;
+export default router
