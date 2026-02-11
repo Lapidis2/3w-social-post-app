@@ -6,7 +6,7 @@ import CreatePost from '../components/social/CreatePost';
 import FilterTabs from '../components/social/FilterTabs';
 import PostCard from '../components/social/PostCard';
 import CommentDrawer from '../components/social/CommentDrawer';
-import { mockPosts, type Post, currentUser, type Comment } from '../data/mockData';
+import type { Post, User } from '../types/types';
 import '../styles/index.css';
 
 const POSTS_PER_PAGE = 5;
@@ -19,17 +19,56 @@ const SocialPage: React.FC = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-
- 
-  const fetchPosts = async () => {
-    setLoading(true);
-   
-    await new Promise((res) => setTimeout(res, 800));
-    setPosts(mockPosts);
-    setLoading(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  useEffect(() => {
+  const fetchCurrentUser = async () => {
+    const res = await fetch('/api/users/me');
+    const data = await res.json();
+    setCurrentUser(data);
   };
 
-  // Effect to check login and fetch posts
+  fetchCurrentUser();
+}, []);
+
+
+const fetchPosts = async () => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No auth token found');
+
+    const res = await fetch('https://threew-social-post-app.onrender.com/api/posts', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Failed to fetch posts: ${errorText}`);
+    }
+
+    const data: {
+      posts: Post[];
+      totalPages: number;
+      currentPage: number;
+    } = await res.json();
+
+    setPosts(data.posts); 
+
+  } catch (error) {
+    console.error('Fetch posts error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+
   useEffect(() => {
     const checkAndFetch = async () => {
       const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -42,115 +81,146 @@ const SocialPage: React.FC = () => {
     checkAndFetch();
   }, [navigate]);
 
-  // Pagination calculation
+
   const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+
   const paginatedPosts = posts.slice(
     (currentPage - 1) * POSTS_PER_PAGE,
     currentPage * POSTS_PER_PAGE
   );
 
-  const handleSearch = (query: string) => {
-    if (query.trim()) {
-      const filtered = mockPosts.filter(
-        (post) =>
-          post.content.toLowerCase().includes(query.toLowerCase()) ||
-          post.user.name.toLowerCase().includes(query.toLowerCase()) ||
-          post.hashtags.some((tag) => tag.toLowerCase().includes(query.toLowerCase()))
-      );
-      setPosts(filtered);
+ 
+  const handleSearch = async (query: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/posts?search=${query}`);
+      const data = await res.json();
+      setPosts(data);
       setCurrentPage(1);
-    } else {
-      setPosts(mockPosts);
-      setCurrentPage(1);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handlePost = (content: string) => {
-    const newPost: Post = {
-      id: Date.now().toString(),
-      user: { ...currentUser, id: 'current-user' },
-      content,
-      hashtags: content.match(/#\w+/g)?.map((tag) => tag.slice(1)) || [],
-      hasAchievement: false,
-      likes: 0,
-      comments: 0,
-      commentsList: [],
-      shares: 0,
-      isLiked: false,
-      createdAt: new Date(),
-    };
-    setPosts([newPost, ...posts]);
+ 
+  const handlePost = async (content: string) => {
+    try {
+      const token = localStorage.getItem('token');
+    if (!token) throw new Error('No auth token found');
+      const res = await fetch('https://threew-social-post-app.onrender.com/api/posts', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: content }),
+      });
+
+      if (!res.ok) throw new Error('Post creation failed');
+
+      const newPost = await res.json();
+
+      setPosts((prev) => [newPost, ...prev]);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleFilterChange = (filterId: string) => {
+  
+  const handleFilterChange = async (filterId: string) => {
     setActiveFilter(filterId);
-    const sortedPosts = [...mockPosts];
-    switch (filterId) {
-      case 'mostliked':
-        sortedPosts.sort((a, b) => b.likes - a.likes);
-        break;
-      case 'mostcommented':
-        sortedPosts.sort((a, b) => b.comments - a.comments);
-        break;
-      case 'mostshared':
-        sortedPosts.sort((a, b) => b.shares - a.shares);
-        break;
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/posts?sort=${filterId}`);
+      const data = await res.json();
+      setPosts(data);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-    setPosts(sortedPosts);
-    setCurrentPage(1);
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(posts.map((post) =>
-      post.id === postId
-        ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
+  /* ================= LIKE ================= */
+  const handleLike = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/posts/${postId}/like`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) throw new Error('Like failed');
+
+      const updatedPost = await res.json();
+
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === postId ? updatedPost : post
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
+  /* ================= COMMENT ================= */
   const handleComment = (postId: string) => {
     setSelectedPostId(postId);
     setCommentDrawerOpen(true);
   };
 
-  const handleAddComment = (content: string) => {
+  const handleAddComment = async (content: string) => {
     if (!selectedPostId) return;
-    const newComment: Comment = {
-      id: `c${Date.now()}`,
-      user: currentUser,
-      content,
-      likes: 0,
-      createdAt: new Date(),
-    };
-    setPosts(posts.map((post) =>
-      post.id === selectedPostId
-        ? { ...post, comments: post.comments + 1, commentsList: [newComment, ...post.commentsList] }
-        : post
-    ));
+
+    try {
+      const res = await fetch(
+        `/api/posts/${selectedPostId}/comments`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        }
+      );
+
+      if (!res.ok) throw new Error('Comment failed');
+
+      const updatedPost = await res.json();
+
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === selectedPostId ? updatedPost : post
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleShare = (postId: string) => {
-    console.log('Share post:', postId);
+  /* ================= SHARE ================= */
+  const handleShare = async (postId: string) => {
+    try {
+      await fetch(`/api/posts/${postId}/share`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleFollow = (userId: string) => {
-    setPosts(posts.map((post) =>
-      post.user.id === userId
-        ? { ...post, user: { ...post.user, isFollowing: !post.user.isFollowing } }
-        : post
-    ));
-  };
-
+ 
+  /* ================= PAGE CHANGE ================= */
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     setLoading(true);
     setTimeout(() => {
       setCurrentPage(page);
       setLoading(false);
-    }, 400); // simulate delay for skeleton
+    }, 400);
   };
 
-  // Skeleton component
+  /* ================= SKELETON ================= */
   const renderSkeleton = () => {
     return Array.from({ length: POSTS_PER_PAGE }).map((_, i) => (
       <div key={i} className="card mb-3 p-3">
@@ -168,7 +238,6 @@ const SocialPage: React.FC = () => {
       <SearchBar onSearch={handleSearch} />
 
       <div className="row mt-3">
-        {/* Main Feed */}
         <div className="col-lg-8 col-md-12">
           <CreatePost onPost={handlePost} />
           <FilterTabs activeFilter={activeFilter} onFilterChange={handleFilterChange} />
@@ -180,17 +249,18 @@ const SocialPage: React.FC = () => {
               ? <div className="text-center p-4"><p className="text-muted">No posts found</p></div>
               : paginatedPosts.map((post) => (
                 <PostCard
-                  key={post.id}
+                  key={post._id}
                   post={post}
+                  
                   onLike={handleLike}
                   onComment={handleComment}
                   onShare={handleShare}
-                  onFollow={handleFollow}
+                 
+                 
                 />
               ))}
           </div>
 
-          {/* Pagination */}
           {!loading && totalPages > 1 && (
             <nav className="mt-4">
               <ul className="pagination justify-content-center">
@@ -211,14 +281,18 @@ const SocialPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Comment Drawer */}
-      <CommentDrawer
-        isOpen={commentDrawerOpen}
-        onClose={() => setCommentDrawerOpen(false)}
-        comments={posts.find((p) => p.id === selectedPostId)?.commentsList || []}
-        onAddComment={handleAddComment}
-        postId={selectedPostId || ''}
-      />
+     {currentUser && (
+  <CommentDrawer
+    isOpen={commentDrawerOpen}
+    onClose={() => setCommentDrawerOpen(false)}
+    comments={
+      posts.find((p) => p._id === selectedPostId)?.comments|| []
+    }
+    onAddComment={handleAddComment}
+    postId={selectedPostId || ''}
+    currentUser={currentUser}
+  />
+)}
     </div>
   );
 };

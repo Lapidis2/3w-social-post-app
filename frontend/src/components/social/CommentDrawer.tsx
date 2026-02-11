@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { type Comment, currentUser } from '../../data/mockData';
+
+export interface Comment {
+  _id: string;
+  username: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  avatar?: string; 
+  likes?: string[];
+}
 
 interface CommentDrawerProps {
   isOpen: boolean;
@@ -7,6 +16,11 @@ interface CommentDrawerProps {
   comments: Comment[];
   onAddComment: (content: string) => void;
   postId: string;
+  currentUser: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
 }
 
 const CommentDrawer: React.FC<CommentDrawerProps> = ({
@@ -14,6 +28,7 @@ const CommentDrawer: React.FC<CommentDrawerProps> = ({
   onClose,
   comments,
   onAddComment,
+  currentUser,
 }) => {
   const [newComment, setNewComment] = useState('');
 
@@ -25,9 +40,10 @@ const CommentDrawer: React.FC<CommentDrawerProps> = ({
     }
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const commentDate = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = now.getTime() - commentDate.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -43,6 +59,7 @@ const CommentDrawer: React.FC<CommentDrawerProps> = ({
   return (
     <>
       <div className="comment-overlay" onClick={onClose}></div>
+
       <div className={`comment-drawer ${isOpen ? 'open' : ''}`}>
         <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
           <h5 className="mb-0 fw-semibold">Comments ({comments.length})</h5>
@@ -60,23 +77,27 @@ const CommentDrawer: React.FC<CommentDrawerProps> = ({
             </div>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="d-flex gap-2 mb-3">
+              <div key={comment._id} className="d-flex gap-2 mb-3">
                 <img
-                  src={comment.user.avatar}
-                  alt={comment.user.name}
+                  src={comment.avatar || '/default-avatar.png'} // fallback avatar
+                  alt={comment.username}
                   className="rounded-circle shrink-0"
                   style={{ width: 40, height: 40, objectFit: 'cover' }}
                 />
                 <div className="grow">
                   <div className="d-flex align-items-center gap-2 mb-1">
-                    <span className="fw-semibold small">{comment.user.name}</span>
-                    <span className="text-muted" style={{ fontSize: '0.8rem' }}>{formatDate(comment.createdAt)}</span>
+                    <span className="fw-semibold small">{comment.username}</span>
+                    <span className="text-muted" style={{ fontSize: '0.8rem' }}>
+                      {formatDate(comment.createdAt)}
+                    </span>
                   </div>
-                  <p className="mb-1 small" style={{ lineHeight: 1.5 }}>{comment.content}</p>
+                  <p className="mb-1 small" style={{ lineHeight: 1.5 }}>
+                    {comment.text}
+                  </p>
                   <div className="d-flex gap-3">
                     <button className="btn btn-link text-muted p-0 text-decoration-none small d-flex align-items-center gap-1">
                       <i className="bi bi-heart"></i>
-                      <span>{comment.likes}</span>
+                      <span>{comment.likes?.length || 0}</span>
                     </button>
                     <button className="btn btn-link text-muted p-0 text-decoration-none small d-flex align-items-center gap-1">
                       <i className="bi bi-reply"></i>
@@ -89,9 +110,12 @@ const CommentDrawer: React.FC<CommentDrawerProps> = ({
           )}
         </div>
 
-        <form className="d-flex align-items-center gap-2 p-3 border-top bg-white" onSubmit={handleSubmit}>
+        <form
+          className="d-flex align-items-center gap-2 p-3 border-top bg-white"
+          onSubmit={handleSubmit}
+        >
           <img
-            src={currentUser.avatar}
+            src={currentUser.avatar || '/default-avatar.png'}
             alt="Your avatar"
             className="rounded-circle shrink-0"
             style={{ width: 36, height: 36, objectFit: 'cover' }}
